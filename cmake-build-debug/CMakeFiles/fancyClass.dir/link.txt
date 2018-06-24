@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -g -g  -shared -Wl,-soname,libfancyClass.so -o libfancyClass.so CMakeFiles/fancyClass.dir/MyFancyClass.cc.o 

@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/dimitrije/CLionProjects/testingClassStuff/MyFancyClass.cc
+iostream
+-
+MyFancyClass.h
+/home/dimitrije/CLionProjects/testingClassStuff/MyFancyClass.h
+
+/home/dimitrije/CLionProjects/testingClassStuff/MyFancyClass.h
+
