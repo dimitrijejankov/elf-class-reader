@@ -1,1 +1,0 @@
-/usr/bin/c++  -g -g   CMakeFiles/testingClassStuff.dir/main.cpp.o CMakeFiles/testingClassStuff.dir/SymbolReader.cc.o  -o testingClassStuff -ldl /usr/lib/x86_64-linux-gnu/libelf.so /usr/lib/x86_64-linux-gnu/libdwarf.so /usr/lib/x86_64-linux-gnu/libelf.so /usr/lib/x86_64-linux-gnu/libdwarf.so 

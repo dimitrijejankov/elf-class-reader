@@ -1,4 +1,0 @@
-/home/dimitrije/CLionProjects/testingClassStuff/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/dimitrije/CLionProjects/testingClassStuff/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/dimitrije/CLionProjects/testingClassStuff/cmake-build-debug/CMakeFiles/fancyClass.dir
-/home/dimitrije/CLionProjects/testingClassStuff/cmake-build-debug/CMakeFiles/testingClassStuff.dir

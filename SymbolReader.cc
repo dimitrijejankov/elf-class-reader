@@ -232,7 +232,6 @@ bool SymbolReader::isMethodSymbol(Dwarf_Die print_me) {
 void SymbolReader::parseAttribute(Dwarf_Die cur_die, classInfo &ret) {
 
   char *name = nullptr;
-  char *typeName = nullptr;
   Dwarf_Attribute attr;
   Dwarf_Unsigned offset;
   Dwarf_Off typeOffset;
@@ -264,20 +263,14 @@ void SymbolReader::parseAttribute(Dwarf_Die cur_die, classInfo &ret) {
   // this has to hold
   assert(gotTypeDie);
 
-  // grab the name of the type
-  int gotTypeName = !dwarf_attr(typeDie, DW_AT_name, &attr, &error) &&
-                    !dwarf_diename(typeDie, &typeName, &error);
-
-  // this has to hold
-  assert(gotTypeName);
-
-  size_t typeSize = getTypeSize(typeDie);
+  std::string tmp;
+  auto type = getType(typeDie, tmp, false);
 
   // set the extracted information
   attributeInfo atInfo{};
   atInfo.name.assign(name);
-  atInfo.size = typeSize;
-  atInfo.type.assign(typeName);
+  atInfo.size = type.second;
+  atInfo.type.assign(type.first);
   atInfo.offset = offset;
 
   // add the attribute
@@ -285,35 +278,114 @@ void SymbolReader::parseAttribute(Dwarf_Die cur_die, classInfo &ret) {
 
   // free the memory
   dwarf_dealloc(dbg, name, DW_DLA_STRING);
-  dwarf_dealloc(dbg, typeName, DW_DLA_STRING);
 }
 
-size_t SymbolReader::getTypeSize(Dwarf_Die cur_die) {
+std::pair<std::string, size_t> SymbolReader::getType(Dwarf_Die cur_die, std::string &previousName, bool isPointer) {
 
+  char *typeName = nullptr;
   Dwarf_Attribute attr;
   Dwarf_Unsigned size;
   Dwarf_Off typeOffset;
   Dwarf_Die typeDie;
+  Dwarf_Half tag = 0;
 
-  int gotByteSize = !dwarf_attr(cur_die, DW_AT_byte_size, &attr, &error) &&
-                    !dwarf_formudata(attr, &size, &error);
+  // grab the tag
+  int gotTagName = !dwarf_tag(cur_die, &tag, &error);
 
-  // did we manage to get the byte size
-  if(gotByteSize) {
-    return size;
+  // check if we have a tag if not return an empty result
+  if(!gotTagName) {
+    return std::make_pair<std::string, size_t>("", 0);
   }
 
-  // if not try to see if this is a typedef and try to follow
-  int gotTypeOffset = !dwarf_attr(cur_die, DW_AT_type, &attr, &error) && !dwarf_global_formref(attr, &typeOffset, &error);
+  switch (tag) {
 
-  // grab the type die
-  int gotTypeDie = !dwarf_offdie_b(dbg, typeOffset, 1, &typeDie, &error);
+    case DW_TAG_const_type:
+    case DW_TAG_typedef: {
 
-  // make sure this never fails
-  assert(gotTypeOffset && gotTypeDie);
+      // the const type and type defs references the actual type therefore we must follow the reference
+      int gotTypeOffset = !dwarf_attr(cur_die, DW_AT_type, &attr, &error) &&
+                          !dwarf_global_formref(attr, &typeOffset, &error) &&
+                          !dwarf_offdie_b(dbg, typeOffset, 1, &typeDie, &error);
 
-  // recurse
-  return getTypeSize(typeDie);
+      // the base type has a name and size so we grab that
+      int gotTypeName = !dwarf_attr(typeDie, DW_AT_name, &attr, &error) &&
+                        !dwarf_diename(typeDie, &typeName, &error);
+
+      // check if there is something wrong
+      if(!gotTypeOffset) {
+        return std::make_pair<std::string, size_t>("", 0);
+      }
+
+      // convert the thing to a std string and free the memory
+      if(gotTypeName) {
+        previousName.assign(typeName);
+        dwarf_dealloc(dbg, typeName, DW_DLA_STRING);
+      }
+
+      // follow the type
+      return getType(typeDie, previousName, isPointer);
+    }
+    case DW_TAG_base_type:
+    case DW_TAG_structure_type:
+    case DW_TAG_class_type:
+    case DW_TAG_union_type: {
+
+      // the base type has a name and size so we grab that
+      int gotTypeName = !dwarf_attr(cur_die, DW_AT_name, &attr, &error) &&
+                        !dwarf_diename(cur_die, &typeName, &error);
+
+      // grab the size of the attribute
+      int gotByteSize = !dwarf_attr(cur_die, DW_AT_byte_size, &attr, &error) &&
+                        !dwarf_formudata(attr, &size, &error);
+
+
+      // check if this thing has a size if it does not it might be a forward declaration
+      if(!gotByteSize) {
+        size = 0;
+      }
+
+      // do we have a pointer suffix or not
+      std::string suffix = isPointer ? "*" : "";
+      size = isPointer ? sizeof(int*) : size;
+
+      // if we don't have the type name but have the size return the thing with the previous name
+      if(!gotTypeName) {
+        return std::make_pair<std::string, size_t>(previousName + suffix, size);
+      }
+
+      // create the return value
+      auto ret = std::make_pair<std::string, size_t>(std::string(typeName) + suffix, size);
+
+      // free the memory
+      dwarf_dealloc(dbg, typeName, DW_DLA_STRING);
+
+      return ret;
+    }
+    case DW_TAG_pointer_type: {
+
+      // try to find the root type of the pointer
+      int gotTypeOffset = !dwarf_attr(cur_die, DW_AT_type, &attr, &error) &&
+                          !dwarf_global_formref(attr, &typeOffset, &error) &&
+                          !dwarf_offdie_b(dbg, typeOffset, 1, &typeDie, &error);
+
+      // check if there is something wrong
+      if(!gotTypeOffset) {
+        return std::make_pair<std::string, size_t>("", 0);
+      }
+
+      // follow the type
+      return getType(typeDie, previousName, true);
+    }
+    default: {
+
+      // this should not happen
+      return std::make_pair<std::string, size_t>("", 0);
+    }
+  }
+}
+
+void SymbolReader::parseMethod(Dwarf_Die curDie, classInfo &info) {
+
 }
 
 void SymbolReader::extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo &ret) {
@@ -336,7 +408,7 @@ void SymbolReader::extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo
         parseAttribute(cur_die, ret);
       }
       else if(isMethodSymbol(cur_die)) {
-        //std::cout << "got methods" << std::endl;
+        parseMethod(cur_die, ret);
       }
 
       res = dwarf_siblingof(dbg, cur_die, &sib_die, &error);

@@ -115,11 +115,12 @@ class SymbolReader {
 
   void parseAttribute(Dwarf_Die cur_die, classInfo &ret);
 
-  size_t getTypeSize(Dwarf_Die cur_die);
+  std::pair<std::string, size_t> getType(Dwarf_Die cur_die, std::string &previousName, bool isPointer);
 
   void print_die_data(Dwarf_Debug dbg, Dwarf_Die print_me, int level);
 
   void extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo &ret);
+  void parseMethod(Dwarf_Die curDie, classInfo &info);
 };
 
 #endif //TESTINGCLASSSTUFF_SYMBOLREADER_H
