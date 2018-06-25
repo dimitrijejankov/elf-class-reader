@@ -30,4 +30,4 @@ returns ( type : int, size : 8) | method name : fancyMethod | parameters :
 	( type : int, size : 4)
 ```
 
-Example code can be seen in main.cc
+Example code can be seen in main.cpp
