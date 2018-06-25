@@ -6,6 +6,8 @@
 
 #IncludeRegexTransform: 
 
+/home/dimitrije/CLionProjects/testingClassStuff/MyFancyClass.h
+
 /home/dimitrije/CLionProjects/testingClassStuff/SymbolReader.cc
 SymbolReader.h
 /home/dimitrije/CLionProjects/testingClassStuff/SymbolReader.h
@@ -27,6 +29,12 @@ string
 -
 set
 -
+cxxabi.h
+-
+iostream
+-
+cassert
+-
 
 /home/dimitrije/CLionProjects/testingClassStuff/SymbolReader.h
 libelf.h
@@ -36,6 +44,14 @@ gelf.h
 string
 -
 set
+-
+libdwarf/dwarf.h
+-
+libdwarf/libdwarf.h
+-
+vector
+-
+memory
 -
 
 /home/dimitrije/CLionProjects/testingClassStuff/main.cpp
@@ -47,14 +63,14 @@ fcntl.h
 -
 stdlib.h
 -
-unistd.h
--
 stdio.h
 -
 errno.h
 -
-libdwarf/dwarf.h
+iostream
 -
-libdwarf/libdwarf.h
--
+SymbolReader.h
+/home/dimitrije/CLionProjects/testingClassStuff/SymbolReader.h
+MyFancyClass.h
+/home/dimitrije/CLionProjects/testingClassStuff/MyFancyClass.h
 

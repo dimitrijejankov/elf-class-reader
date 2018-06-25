@@ -11,7 +11,9 @@ public:
 
   explicit MyFancyClass(bool ss);
 
-  bool fancyAttribute;
+  int8_t fancyAttribute1;
+  int64_t fancyAttribute2;
+  int64_t fancyAttribute3;
 
   int fancyMethod();
 

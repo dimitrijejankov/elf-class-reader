@@ -4,5 +4,7 @@
 CMakeFiles/testingClassStuff.dir/SymbolReader.cc.o: ../SymbolReader.cc
 CMakeFiles/testingClassStuff.dir/SymbolReader.cc.o: ../SymbolReader.h
 
+CMakeFiles/testingClassStuff.dir/main.cpp.o: ../MyFancyClass.h
+CMakeFiles/testingClassStuff.dir/main.cpp.o: ../SymbolReader.h
 CMakeFiles/testingClassStuff.dir/main.cpp.o: ../main.cpp
 
