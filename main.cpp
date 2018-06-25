@@ -1,9 +1,3 @@
-#include <sys/types.h> /* For open() */
-#include <sys/stat.h>  /* For open() */
-#include <fcntl.h>     /* For open() */
-#include <stdlib.h>     /* For exit() */
-#include <stdio.h>
-#include <errno.h>
 #include <iostream>
 #include "SymbolReader.h"
 #include "MyFancyClass.h"
@@ -20,6 +14,14 @@ int main(int argc, char **argv) {
 
   for(auto &it : *x.attributes) {
     std::cout << "Name of the attribute " << it.name << " offset from the start " <<  it.offset << " type " << it.type << " the size " << it.size << std::endl;
+  }
+
+  for(auto &it : *x.methods) {
+    std::cout << "returns ( type : " << it.returnType.name << ", size : " << it.returnType.size << ")" << " | method name : " << it.name << " | parameters :" << std::endl;
+
+    for(auto &jt : it.parameters) {
+      std::cout << "\t( type : " << jt.name  << ", size : " << jt.size << ")" << std::endl;
+    }
   }
 
   return 0;

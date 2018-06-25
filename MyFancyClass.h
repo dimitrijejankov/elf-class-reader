@@ -22,7 +22,7 @@ public:
   int64_t* fancyAttribute4;
   qwery1 tmp;
 
-  int fancyMethod();
+  int fancyMethod(char x, int y);
 
 };
 

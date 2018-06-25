@@ -14,6 +14,29 @@
 #include <vector>
 #include <memory>
 
+struct attributeType {
+
+  attributeType() = default;
+
+  /**
+   * Constructor with parameters
+   * @param name - the name of the type
+   * @param size - the size of the type in bytes
+   */
+  attributeType(const std::string &name, size_t size) : name(name), size(size) {}
+
+  /**
+   * The name of the type
+   */
+  std::string name;
+
+  /**
+   * The size of the type
+   */
+  size_t size = 0;
+
+};
+
 struct attributeInfo {
 
   /**
@@ -37,6 +60,31 @@ struct attributeInfo {
   std::string type;
 };
 
+struct methodInfo {
+
+  /**
+   * The name of the method
+   */
+  std::string name;
+
+  /**
+   * The symbol of the method
+   */
+  std::string symbol;
+
+  /**
+   * The return type of the method
+   */
+  attributeType returnType;
+
+
+  /**
+   * The parameters of the method
+   */
+  std::vector<attributeType> parameters;
+
+};
+
 struct classInfo {
 
   /**
@@ -44,12 +92,18 @@ struct classInfo {
    */
   classInfo() {
     attributes = std::make_shared<std::vector<attributeInfo>>();
+    methods = std::make_shared<std::vector<methodInfo>>();
   }
 
   /**
    * The attributes of the class
    */
   std::shared_ptr<std::vector<attributeInfo>> attributes;
+
+  /**
+   * The methods of the class
+   */
+  std::shared_ptr<std::vector<methodInfo>> methods;
 
 };
 
@@ -115,11 +169,10 @@ class SymbolReader {
 
   void parseAttribute(Dwarf_Die cur_die, classInfo &ret);
 
-  std::pair<std::string, size_t> getType(Dwarf_Die cur_die, std::string &previousName, bool isPointer);
-
-  void print_die_data(Dwarf_Debug dbg, Dwarf_Die print_me, int level);
+  attributeType getType(Dwarf_Die cur_die, std::string &previousName, bool isPointer);
 
   void extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo &ret);
+
   void parseMethod(Dwarf_Die curDie, classInfo &info);
 };
 

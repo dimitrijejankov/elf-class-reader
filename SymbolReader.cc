@@ -269,8 +269,8 @@ void SymbolReader::parseAttribute(Dwarf_Die cur_die, classInfo &ret) {
   // set the extracted information
   attributeInfo atInfo{};
   atInfo.name.assign(name);
-  atInfo.size = type.second;
-  atInfo.type.assign(type.first);
+  atInfo.size = type.size;
+  atInfo.type.assign(type.name);
   atInfo.offset = offset;
 
   // add the attribute
@@ -280,7 +280,7 @@ void SymbolReader::parseAttribute(Dwarf_Die cur_die, classInfo &ret) {
   dwarf_dealloc(dbg, name, DW_DLA_STRING);
 }
 
-std::pair<std::string, size_t> SymbolReader::getType(Dwarf_Die cur_die, std::string &previousName, bool isPointer) {
+attributeType SymbolReader::getType(Dwarf_Die cur_die, std::string &previousName, bool isPointer) {
 
   char *typeName = nullptr;
   Dwarf_Attribute attr;
@@ -294,7 +294,7 @@ std::pair<std::string, size_t> SymbolReader::getType(Dwarf_Die cur_die, std::str
 
   // check if we have a tag if not return an empty result
   if(!gotTagName) {
-    return std::make_pair<std::string, size_t>("", 0);
+    return attributeType("", 0);
   }
 
   switch (tag) {
@@ -313,7 +313,7 @@ std::pair<std::string, size_t> SymbolReader::getType(Dwarf_Die cur_die, std::str
 
       // check if there is something wrong
       if(!gotTypeOffset) {
-        return std::make_pair<std::string, size_t>("", 0);
+        return attributeType("", 0);
       }
 
       // convert the thing to a std string and free the memory
@@ -350,11 +350,11 @@ std::pair<std::string, size_t> SymbolReader::getType(Dwarf_Die cur_die, std::str
 
       // if we don't have the type name but have the size return the thing with the previous name
       if(!gotTypeName) {
-        return std::make_pair<std::string, size_t>(previousName + suffix, size);
+        return attributeType(previousName + suffix, size);
       }
 
       // create the return value
-      auto ret = std::make_pair<std::string, size_t>(std::string(typeName) + suffix, size);
+      auto ret = attributeType(std::string(typeName) + suffix, size);
 
       // free the memory
       dwarf_dealloc(dbg, typeName, DW_DLA_STRING);
@@ -370,7 +370,7 @@ std::pair<std::string, size_t> SymbolReader::getType(Dwarf_Die cur_die, std::str
 
       // check if there is something wrong
       if(!gotTypeOffset) {
-        return std::make_pair<std::string, size_t>("", 0);
+        return attributeType("", 0);
       }
 
       // follow the type
@@ -379,13 +379,108 @@ std::pair<std::string, size_t> SymbolReader::getType(Dwarf_Die cur_die, std::str
     default: {
 
       // this should not happen
-      return std::make_pair<std::string, size_t>("", 0);
+      return attributeType("", 0);
     }
   }
 }
 
 void SymbolReader::parseMethod(Dwarf_Die curDie, classInfo &info) {
 
+  // the method info
+  methodInfo ret{};
+
+  char *name = nullptr;
+  char *symbol = nullptr;
+  Dwarf_Attribute attr;
+  Dwarf_Off typeOffset;
+  Dwarf_Die typeDie;
+  Dwarf_Die child = nullptr;
+  Dwarf_Die sibling = nullptr;
+  std::vector<attributeType> parameters;
+
+  // check if this entry is the symbol of the class
+  int gotName = !dwarf_attr(curDie, DW_AT_name, &attr, &error) &&
+                !dwarf_diename(curDie, &name, &error);
+
+  // check if this entry is the symbol of the class
+  int gotSymbol = !dwarf_attr(curDie, DW_AT_linkage_name, &attr, &error) &&
+                  !dwarf_die_text(curDie, DW_AT_linkage_name, &symbol, &error);
+
+  // check if it has a return type
+  int hasReturn = !dwarf_attr(curDie, DW_AT_type, &attr, &error) &&
+                  !dwarf_global_formref(attr, &typeOffset, &error) &&
+                  !dwarf_offdie_b(dbg, typeOffset, 1, &typeDie, &error);
+
+  // this has not return value so set it to void
+  if(!hasReturn) {
+    ret.returnType.name.assign("void");
+    ret.returnType.size = sizeof(void);
+  }
+  else {
+    std::string emp;
+    auto tmp = getType(typeDie, emp, false);
+
+    // copy the type
+    ret.returnType.name.assign(tmp.name);
+    ret.returnType.size = sizeof(tmp.size);
+  }
+
+  // grab the parameters (they are children of the method and have the tag DW_TAG_formal_parameter)
+  auto res = dwarf_child(curDie, &child, &error);
+
+  // go through each sibling to get the next one
+  sibling = child;
+  std::pair<std::string, size_t> tmp;
+  while (res == DW_DLV_OK) {
+
+    // grab the tag
+    Dwarf_Half tag = 0;
+    int gotTagName = !dwarf_tag(sibling, &tag, &error);
+
+    // check if this is a DW_TAG_formal_parameter if it is not skip it (although this might indicate an error)
+    if(!gotTagName || tag != DW_TAG_formal_parameter) {
+      continue;
+    }
+
+    // grab the type
+    int hasType = !dwarf_attr(sibling, DW_AT_type, &attr, &error) &&
+                  !dwarf_global_formref(attr, &typeOffset, &error) &&
+                  !dwarf_offdie_b(dbg, typeOffset, 1, &typeDie, &error);
+
+    // check if this has a type attribute if id does not skip (although this might indicate an error)
+    if(!hasType) {
+      continue;
+    }
+
+    // grab the type of the parameters
+    std::string emp;
+    auto type = getType(typeDie, emp, false);
+
+    // store the parameter
+    parameters.emplace_back(type);
+
+    res = dwarf_siblingof(dbg, sibling, &sibling, &error);
+  }
+
+  // get the name of the method
+  if(gotName) {
+    ret.name.assign(name);
+  }
+
+  // do we have a symbol
+  if(gotSymbol) {
+    ret.symbol.assign(symbol);
+  }
+
+  // copy parameter list
+  ret.parameters = parameters;
+
+  // free the memory
+  dwarf_dealloc(dbg, name, DW_DLA_STRING);
+  dwarf_dealloc(dbg, symbol, DW_DLA_STRING);
+
+  // store the parsed method
+  info.methods->emplace_back(ret);
 }
 
 void SymbolReader::extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo &ret) {
@@ -394,7 +489,7 @@ void SymbolReader::extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo
   Dwarf_Die sib_die = nullptr;
   Dwarf_Die cur_die = in_die;
 
-  /* First son, if any */
+  // grab the child
   auto res = dwarf_child(cur_die, &child, &error);
 
   // traverse tree depth first

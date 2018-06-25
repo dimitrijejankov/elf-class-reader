@@ -5,8 +5,8 @@
 #include <iostream>
 #include "MyFancyClass.h"
 
-int MyFancyClass::fancyMethod() {
-  return 0;
+int MyFancyClass::fancyMethod(char x, int y) {
+  return 8;
 }
 
 MyFancyClass::MyFancyClass(bool ss) {
