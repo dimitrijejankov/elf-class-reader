@@ -19,7 +19,7 @@ public:
   int8_t fancyAttribute1;
   int64_t fancyAttribute2;
   int64_t fancyAttribute3;
-  int64_t* fancyAttribute4;
+  int64_t** fancyAttribute4;
   qwery1 tmp;
 
   int fancyMethod(char x, int y);

@@ -264,7 +264,7 @@ void SymbolReader::parseAttribute(Dwarf_Die cur_die, classInfo &ret) {
   assert(gotTypeDie);
 
   std::string tmp;
-  auto type = getType(typeDie, tmp, false);
+  auto type = getType(typeDie, tmp, 0);
 
   // set the extracted information
   attributeInfo atInfo{};
@@ -280,7 +280,7 @@ void SymbolReader::parseAttribute(Dwarf_Die cur_die, classInfo &ret) {
   dwarf_dealloc(dbg, name, DW_DLA_STRING);
 }
 
-attributeType SymbolReader::getType(Dwarf_Die cur_die, std::string &previousName, bool isPointer) {
+attributeType SymbolReader::getType(Dwarf_Die cur_die, std::string &previousName, unsigned int isPointer) {
 
   char *typeName = nullptr;
   Dwarf_Attribute attr;
@@ -345,7 +345,7 @@ attributeType SymbolReader::getType(Dwarf_Die cur_die, std::string &previousName
       }
 
       // do we have a pointer suffix or not
-      std::string suffix = isPointer ? "*" : "";
+      std::string suffix = isPointer ? std::string(isPointer, '*') : "";
       size = isPointer ? sizeof(int*) : size;
 
       // if we don't have the type name but have the size return the thing with the previous name
@@ -374,7 +374,7 @@ attributeType SymbolReader::getType(Dwarf_Die cur_die, std::string &previousName
       }
 
       // follow the type
-      return getType(typeDie, previousName, true);
+      return getType(typeDie, previousName, ++isPointer);
     }
     default: {
 
@@ -418,7 +418,7 @@ void SymbolReader::parseMethod(Dwarf_Die curDie, classInfo &info) {
   }
   else {
     std::string emp;
-    auto tmp = getType(typeDie, emp, false);
+    auto tmp = getType(typeDie, emp, 0);
 
     // copy the type
     ret.returnType.name.assign(tmp.name);
@@ -454,7 +454,7 @@ void SymbolReader::parseMethod(Dwarf_Die curDie, classInfo &info) {
 
     // grab the type of the parameters
     std::string emp;
-    auto type = getType(typeDie, emp, false);
+    auto type = getType(typeDie, emp, 0);
 
     // store the parameter
     parameters.emplace_back(type);
