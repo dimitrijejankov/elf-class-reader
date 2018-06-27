@@ -6,7 +6,9 @@
 #define TESTINGCLASSSTUFF_CLASSREFLECTION_H
 
 #include <memory>
+#include <map>
 #include "SymbolReader.h"
+#include "MethodReflection.h"
 
 class ClassReflection;
 typedef std::shared_ptr<ClassReflection> ClassReflectionPtr;
@@ -21,12 +23,29 @@ public:
    */
   ClassReflection(const classInfo &clsInfo, void *sharedLibrary);
 
- private:
+  /**
+   * Grab the method with the name
+   * @param methodName - the method name
+   * @return the reflected method
+   */
+  MethodReflectionPtr getMethod(std::string methodName);
+
+private:
 
   /**
-   * The info about the reflected class (methods and attributes)
+   * The class name with the full namespace specification
    */
-  classInfo clsInfo;
+  std::string className;
+
+  /**
+   * The attributes of the class
+   */
+  std::shared_ptr<std::vector<attributeInfo>> attributes;
+
+  /**
+   * Maps the name of the method to the
+   */
+  std::map<std::string, std::vector<methodInfo>> methods;
 
   /**
    * The shared library we loaded

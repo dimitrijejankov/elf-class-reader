@@ -469,7 +469,7 @@ void SymbolReader::parseMethod(Dwarf_Die curDie, classInfo &info) {
   // this has not return value so set it to void
   if(!hasReturn) {
     ret.returnType.name.assign("void");
-    ret.returnType.size = sizeof(void);
+    ret.returnType.size = 0;
   }
   else {
     std::string emp;

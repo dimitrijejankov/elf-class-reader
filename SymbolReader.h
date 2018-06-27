@@ -8,7 +8,6 @@
 #include <libelf.h>
 #include <gelf.h>
 #include <string>
-#include <set>
 #include <libdwarf/dwarf.h>
 #include <libdwarf/libdwarf.h>
 #include <vector>

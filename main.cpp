@@ -11,7 +11,13 @@ int main(int argc, char **argv) {
   reflection.load(fileName);
 
   // reflect the class
-  auto clsReflection = reflection.getClassReflection("myFancyNamespace::OuterClass::MyFancyClass");
+  auto clsReflection = reflection.getClassReflection("myFancyNamespace::MyFancyClass");
+
+  // grab the constructors
+  auto constructors = clsReflection->getMethod("fancyMethod");
+
+  // execute the constructor
+  constructors->execute();
 
   return 0;
 }

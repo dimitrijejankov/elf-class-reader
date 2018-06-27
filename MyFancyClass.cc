@@ -7,12 +7,11 @@
 
 namespace myFancyNamespace {
 
-int OuterClass::MyFancyClass::fancyMethod(char x, int y) {
-  return 8;
-}
+int MyFancyClass::fancyMethod(char x, int y) {
 
-OuterClass::MyFancyClass::MyFancyClass(bool ss) {
-  std::cout << ss << std::endl;
+  std::cout << "asd" << std::endl;
+
+  return 8;
 }
 
 }

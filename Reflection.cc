@@ -21,7 +21,7 @@ bool Reflection::load(std::string fileName) {
   }
 
   // load the .so
-  this->sharedLibrary = dlopen(fileName.c_str(), RTLD_NOW | RTLD_GLOBAL);
+  this->sharedLibrary = dlopen(fileName.c_str(), RTLD_NOW);
 
   // did we succeed
   if(this->sharedLibrary != nullptr) {
