@@ -96,6 +96,11 @@ struct classInfo {
   }
 
   /**
+   * The class name with the full namespace specification
+   */
+  std::string className;
+
+  /**
    * The attributes of the class
    */
   std::shared_ptr<std::vector<attributeInfo>> attributes;
@@ -128,6 +133,13 @@ class SymbolReader {
    */
   classInfo getClassInformation(const std::type_info &typeInfo);
 
+  /**
+   *
+   * @param typeSpec
+   * @return
+   */
+  classInfo getClassInformation(const std::string &typeSpec);
+
  private:
 
   /**
@@ -157,11 +169,13 @@ class SymbolReader {
 
   bool realTypeName(const std::type_info& typeInfo, std::string &typeName);
 
-  classInfo analyzeFile(std::string &realName);
+  classInfo analyzeFile(std::vector<std::string> &realName);
 
-  void getDieAndSiblings(Dwarf_Debug dbg, Dwarf_Die in_die, int in_level, std::string &realName, classInfo &ret);
+  void getDieAndSiblings(Dwarf_Debug dbg, Dwarf_Die in_die, int in_level, std::vector<std::string> &hierarchy, classInfo &ret);
 
   bool isClassSymbol(Dwarf_Debug dbg, Dwarf_Die print_me, std::string &realName);
+
+  bool isNamespaceOrClass(Dwarf_Debug dbg, Dwarf_Die print_me, std::string &realName);
 
   bool isAttributeSymbol(Dwarf_Die print_me);
 
@@ -171,7 +185,7 @@ class SymbolReader {
 
   attributeType getType(Dwarf_Die cur_die, std::string &previousName, unsigned int isPointer);
 
-  void extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo &ret);
+  void extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, std::vector<std::string> &hierarchy, classInfo &ret);
 
   void parseMethod(Dwarf_Die curDie, classInfo &info);
 };

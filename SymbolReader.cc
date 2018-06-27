@@ -15,6 +15,10 @@
 #include <cxxabi.h>
 #include <iostream>
 #include <cassert>
+#include <sstream>
+#include <iterator>
+#include <boost/regex.hpp>
+#include <boost/algorithm/string/regex.hpp>
 
 SymbolReader::SymbolReader(std::string &fileName) {
 
@@ -64,17 +68,32 @@ bool SymbolReader::load() {
 
 classInfo SymbolReader::getClassInformation(const std::type_info &typeInfo) {
 
-  // the return
-  classInfo ret;
-
   // grab the real name
   std::string realName;
   if(!realTypeName(typeInfo, realName)) {
+
+    // the return
+    classInfo ret;
+
     return ret;
   }
 
-  return analyzeFile(realName);
+  // hierarchy
+  std::vector<std::string> hierarchy;
+  boost::algorithm::split_regex(hierarchy, realName, boost::regex("::"));
+
+  return analyzeFile(hierarchy);
 }
+
+classInfo SymbolReader::getClassInformation(const std::string &typeSpec) {
+
+  // hierarchy
+  std::vector<std::string> hierarchy;
+  boost::algorithm::split_regex(hierarchy, typeSpec, boost::regex("::"));
+
+  return analyzeFile(hierarchy);
+}
+
 
 bool SymbolReader::realTypeName(const std::type_info& typeInfo, std::string &typeName) {
 
@@ -97,7 +116,7 @@ bool SymbolReader::realTypeName(const std::type_info& typeInfo, std::string &typ
   return true;
 }
 
-classInfo SymbolReader::analyzeFile(std::string &realName) {
+classInfo SymbolReader::analyzeFile(std::vector<std::string> &hierarchy) {
 
   // the return stuff
   classInfo ret;
@@ -114,9 +133,13 @@ classInfo SymbolReader::analyzeFile(std::string &realName) {
     Dwarf_Die no_die = nullptr;
     Dwarf_Die cu_die = nullptr;
     int res = DW_DLV_ERROR;
-    res = dwarf_next_cu_header(dbg, &cu_header_length,
-                               &version_stamp, &abbrev_offset, &address_size,
-                               &next_cu_header, &error);
+    res = dwarf_next_cu_header(dbg,
+                               &cu_header_length,
+                               &version_stamp,
+                               &abbrev_offset,
+                               &address_size,
+                               &next_cu_header,
+                               &error);
 
     if (res == DW_DLV_ERROR) {
       printf("Error in dwarf_next_cu_header\n");
@@ -140,39 +163,44 @@ classInfo SymbolReader::analyzeFile(std::string &realName) {
       exit(1);
     }
 
-    getDieAndSiblings(dbg, cu_die, 0, realName, ret);
+    getDieAndSiblings(dbg, cu_die, 0, hierarchy, ret);
 
     dwarf_dealloc(dbg, cu_die, DW_DLA_DIE);
   }
 }
 
-void SymbolReader::getDieAndSiblings(Dwarf_Debug dbg, Dwarf_Die in_die, int in_level, std::string &realName, classInfo &ret) {
+void SymbolReader::getDieAndSiblings(Dwarf_Debug dbg, Dwarf_Die in_die, int in_level, std::vector<std::string> &hierarchy, classInfo &ret) {
 
   int res = DW_DLV_ERROR;
   Dwarf_Die cur_die = in_die;
-  Dwarf_Die sib_die = in_die;
   Dwarf_Die child = nullptr;
   Dwarf_Error error;
 
-  /* Who am I? */
-  //print_die_data(dbg, in_die, in_level);
-  if(isClassSymbol(dbg, in_die, realName)) {
-    extractClassInfo(dbg, in_die, ret);
+  // if we exceeded the level
+  if(in_level > hierarchy.size()) {
+    return;
   }
 
-  /* First son, if any */
+  // grab the child
   res = dwarf_child(cur_die, &child, &error);
 
+  // we are looking at this one
+  cur_die = child;
+
   // traverse tree depth first
-  if (res == DW_DLV_OK) {
-    getDieAndSiblings(dbg, child, in_level + 1, realName, ret); /* recur on the first son */
-    sib_die = child;
-    while (res == DW_DLV_OK) {
-      cur_die = sib_die;
-      res = dwarf_siblingof(dbg, cur_die, &sib_die, &error);
-      getDieAndSiblings(dbg, sib_die, in_level + 1, realName, ret); /* recur others */
-    };
-  }
+  while (res == DW_DLV_OK) {
+
+    // is this the final class symbol
+    if(isClassSymbol(dbg, cur_die, hierarchy.back()) && (in_level == hierarchy.size() - 1)) {
+      extractClassInfo(dbg, cur_die, hierarchy, ret);
+    }
+    // is this a namespace or a class
+    else if(isNamespaceOrClass(dbg, cur_die, hierarchy[in_level])) {
+      getDieAndSiblings(dbg, cur_die, in_level + 1, hierarchy, ret);
+    }
+
+    res = dwarf_siblingof(dbg, cur_die, &cur_die, &error);
+  };
 }
 
 bool SymbolReader::isClassSymbol(Dwarf_Debug dbg, Dwarf_Die print_me, std::string &realName) {
@@ -226,6 +254,32 @@ bool SymbolReader::isMethodSymbol(Dwarf_Die print_me) {
   }
 
   return false;
+}
+
+bool SymbolReader::isNamespaceOrClass(Dwarf_Debug dbg, Dwarf_Die print_me, std::string &realName) {
+  // the return value
+  bool ret = false;
+
+  // check if this entry is the symbol of the class
+  char *name = nullptr;
+  int gotName = !dwarf_diename(print_me, &name, &error);
+
+  // grab the tag
+  Dwarf_Half tag = 0;
+  int gotTagName = !dwarf_tag(print_me, &tag, &error);
+
+  // if it does have a name
+  if(gotName && gotTagName) {
+
+    // is this our guy
+    ret = std::string(name) == realName && (tag == DW_TAG_class_type || tag == DW_TAG_namespace);
+  }
+
+  // deallocate the name
+  dwarf_dealloc(dbg, name, DW_DLA_STRING);
+
+  // return the value
+  return ret;
 }
 
 /// TODO do better error handling
@@ -483,11 +537,21 @@ void SymbolReader::parseMethod(Dwarf_Die curDie, classInfo &info) {
   info.methods->emplace_back(ret);
 }
 
-void SymbolReader::extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, classInfo &ret) {
+void SymbolReader::extractClassInfo(Dwarf_Debug dbg, Dwarf_Die in_die, std::vector<std::string> &hierarchy, classInfo &ret) {
 
   Dwarf_Die child = nullptr;
   Dwarf_Die sib_die = nullptr;
   Dwarf_Die cur_die = in_die;
+
+  // concatenate the hierarchy
+  ret.className.clear();
+  for(auto &it : hierarchy) {
+    ret.className += it + "::";
+  }
+
+  // remove the last two colons
+  ret.className.pop_back();
+  ret.className.pop_back();
 
   // grab the child
   auto res = dwarf_child(cur_die, &child, &error);

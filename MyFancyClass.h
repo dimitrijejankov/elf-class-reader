@@ -5,25 +5,45 @@
 #ifndef TESTINGCLASSSTUFF_MYFANCYCLASS_H
 #define TESTINGCLASSSTUFF_MYFANCYCLASS_H
 
+namespace myFancyNamespace {
+
 class qwery1 {
   size_t x;
   size_t y;
 };
 
-class MyFancyClass {
+class MyFancyBaseClass {
 
-public:
-
-  explicit MyFancyClass(bool ss);
-
-  int8_t fancyAttribute1;
-  int64_t fancyAttribute2;
-  int64_t fancyAttribute3;
-  int64_t** fancyAttribute4;
-  qwery1 tmp;
-
-  int fancyMethod(char x, int y);
+  int8_t fancyBaseAttribute1;
+  int64_t fancyBaseAttribute2;
 
 };
+
+class OuterClass {
+
+  class MyFancyClass : public MyFancyBaseClass {
+
+   public:
+
+    explicit MyFancyClass(bool ss);
+
+    int8_t fancyAttribute1;
+    int64_t fancyAttribute2;
+    int64_t fancyAttribute3;
+    int64_t** fancyAttribute4;
+    qwery1 tmp;
+
+    int fancyMethod(char x, int y);
+
+  };
+
+
+  int x;
+};
+
+
+
+}
+
 
 #endif //TESTINGCLASSSTUFF_MYFANCYCLASS_H
