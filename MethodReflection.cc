@@ -27,18 +27,10 @@ bool MethodReflection::execute() {
   auto function = (void(*)()) dlsym(this->sharedLibrary, methodSymbol.c_str());
 
   char buffer[1000];
-//
-//  int *a;
-//  int *b;
-//  int tmp0, tmp1;
-//  int x, y;
-//
-//  __asm__ volatile (
-//  "sub (%[a]), %esp\n\t" /* x = (*a) */
-//  "%=:\n\t"
-//
-//  : [x] "=&r" (tmp0), [y] "=&r" (tmp1)
-//  : [a] "r" (a), [b] "r" (b) : "memory" /* "cc" */ );
+  int64_t n = 13;
+
+  asm ("subq %0, %%rsp \n\t" : "+r" (n)::"rax");
+  function();
 
   return true;
 }
