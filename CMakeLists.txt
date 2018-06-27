@@ -12,7 +12,7 @@ find_package(LibDwarf REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS regex REQUIRED)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 
-add_executable(testingClassStuff main.cpp SymbolReader.h SymbolReader.cc)
+add_executable(testingClassStuff main.cpp SymbolReader.h SymbolReader.cc Reflection.cc Reflection.h ClassReflection.h ClassReflection.cc)
 target_link_libraries(testingClassStuff ${CMAKE_DL_LIBS} ${LIBELF_LIBRARIES} ${LIBDWARF_LIBRARIES} ${Boost_LIBRARIES})
 
 add_library(fancyClass SHARED MyFancyClass.cc MyFancyClass.h)

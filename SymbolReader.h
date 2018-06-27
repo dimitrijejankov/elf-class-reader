@@ -116,15 +116,21 @@ class SymbolReader {
 
  public:
 
-  explicit SymbolReader(std::string &fileName);
+  /**
+   * Initialize the SymbolReader
+   */
+  explicit SymbolReader();
 
+  /**
+   * Destroy the SymbolReader
+   */
   virtual ~SymbolReader();
 
   /**
    * Loads the file returns false if it fails or true if it can be loaded
    * @return true if it succeed false otherwise
    */
-  bool load();
+  bool load(std::string &fileName);
 
   /**
    *

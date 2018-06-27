@@ -20,10 +20,7 @@
 #include <boost/regex.hpp>
 #include <boost/algorithm/string/regex.hpp>
 
-SymbolReader::SymbolReader(std::string &fileName) {
-
-  // set the file name
-  this->fileName = fileName;
+SymbolReader::SymbolReader() {
 
   // true if it is loaded
   this->isLoaded = false;
@@ -38,8 +35,10 @@ SymbolReader::~SymbolReader() {
   }
 }
 
-bool SymbolReader::load() {
+bool SymbolReader::load(std::string &fileName) {
 
+  // set the file name
+  this->fileName = fileName;
 
   // open the file
   fd = open(fileName.c_str(), O_RDONLY);
@@ -150,17 +149,18 @@ classInfo SymbolReader::analyzeFile(std::vector<std::string> &hierarchy) {
       return ret;
     }
 
-    /* The CU will have a single sibling, a cu_die. */
+    // the CU will have a single sibling, a cu_die.
     res = dwarf_siblingof(dbg, no_die, &cu_die, &error);
     if (res == DW_DLV_ERROR) {
       printf("Error in dwarf_siblingof on CU die \n");
-      exit(1);
+      return ret;
     }
 
     if (res == DW_DLV_NO_ENTRY) {
-      /* Impossible case. */
+
+      // impossible case.
       printf("no entry! in dwarf_siblingof on CU die \n");
-      exit(1);
+      return ret;
     }
 
     getDieAndSiblings(dbg, cu_die, 0, hierarchy, ret);
@@ -257,6 +257,7 @@ bool SymbolReader::isMethodSymbol(Dwarf_Die print_me) {
 }
 
 bool SymbolReader::isNamespaceOrClass(Dwarf_Debug dbg, Dwarf_Die print_me, std::string &realName) {
+
   // the return value
   bool ret = false;
 
