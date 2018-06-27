@@ -13,11 +13,16 @@ int main(int argc, char **argv) {
   // reflect the class
   auto clsReflection = reflection.getClassReflection("myFancyNamespace::MyFancyClass");
 
-  // grab the constructors
-  auto constructors = clsReflection->getMethod("fancyMethod");
+  // grab the method
+  auto fancyMethod = clsReflection->getMethod("fancyMethod");
+
+  char dummyObj[1000];
+  fancyMethod->putPointer(dummyObj, "MyFancyClass");
+  fancyMethod->putChar('s');
+  fancyMethod->putInt(999);
 
   // execute the constructor
-  constructors->execute();
+  fancyMethod->execute();
 
   return 0;
 }

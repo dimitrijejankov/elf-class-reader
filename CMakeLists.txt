@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.9)
 project(testingClassStuff)
 
 # set clang as the default compiler
-set(CMAKE_C_COMPILER "clang-6.0")
-set(CMAKE_CXX_COMPILER "clang++-6.0")
+set(CMAKE_C_COMPILER "clang")
+set(CMAKE_CXX_COMPILER "clang++")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)

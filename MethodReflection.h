@@ -16,9 +16,24 @@ public:
 
   MethodReflection(std::string methodName, const std::vector<methodInfo> &possibleMethods, void *sharedLibrary);
 
-  void putPointer(std::string type, void *value);
+  /**
+   * Put a pointer of a particular type
+   * @param address - the address
+   * @param type - the type of the pointer
+   */
+  void putPointer(void *address, std::string type);
 
+  /**
+   * Put an integer value
+   * @param value - the value
+   */
   void putInt(int value);
+
+  /**
+   * The character value
+   * @param value - the value
+   */
+  void putChar(char value);
 
   bool execute();
 
@@ -40,9 +55,14 @@ public:
   std::string methodName;
 
   /**
-   * The stack with all the attributes
+   * The stack buffer
    */
-  std::vector<int8_t> stack;
+  std::vector<int8_t> stackBuffer;
+
+  /**
+   * The list of types stored on the stack
+   */
+  std::vector<std::string> stackTypes;
 };
 
 #endif //TESTINGCLASSSTUFF_METHODREFLECTION_H
